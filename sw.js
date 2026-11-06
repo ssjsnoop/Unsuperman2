@@ -1,6 +1,6 @@
 /* Unsuperman 2 service worker: network-first so uploading a new index.html always shows up,
    with a cached copy as the offline fallback. Bump CACHE only if you rename files. */
-var CACHE='unsuperman2-shell-v1';
+var CACHE='unsuperman2-shell-v2';
 var SHELL=['./','index.html','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(SHELL);}).then(function(){return self.skipWaiting();}).catch(function(){}));

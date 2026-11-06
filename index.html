@@ -133,7 +133,7 @@ body:not(.space) #galNav{display:none} .galhead{font-size:11px;font-weight:900;l
 
 <div class="ov show" id="ovTitle"><div class="card" style="background:none;border:0;box-shadow:none">
 <div class="logo"><span class="un">UN</span><span class="sm">SUPERMAN<span class="two"> 2</span></span></div>
-<div class="tag">Fired. Furious. Flying.</div>
+<div class="tag">Fired. Furious. Flying.</div><div class="tag" id="tStats" style="font-size:13px;opacity:.85;margin-top:2px"></div>
 <div class="tbtns">
 <button class="big" id="tPlay">▶ Play</button>
 <button class="big sec" id="tNew">New Game</button>
@@ -151,7 +151,7 @@ body:not(.space) #galNav{display:none} .galhead{font-size:11px;font-weight:900;l
 <tr><td><b>Keyboard</b></td><td>WASD/Arrows fly. Mouse aims. Space or click = fire. F or right-click = punch. R = Unsuper Mode. 1-8 pick power. Shift dashes. U = menu. Esc = pause.</td></tr>
 <tr><td><b>Upgrades</b></td><td>Stars ⭐ unlock and upgrade powers (10 levels each). Earn stars from bosses (+2 once), destroying a planet (+1 per visit), and finishing all 3 quests (+1 once). Shards 💠 buy gear and suits. Open the menu with ⚡.</td></tr>
 </table>
-<p><b>NEW IN UNSUPERMAN 2:</b> Galaxies II-IV have their own rules (crushers and factories, spore clouds, darkness and gravity wells). Every Enforcer has a gimmick: read the hint above its health bar. Red-hot blocks explode in chains. Visit <b>Wayward</b> for a flyable home with the workshop, garage, Rampage Arena and launch pad (press <b>G</b> or tap the button at a sign). Beat the Chairman to recruit Captain Paragon and unlock New Game+.</p>
+<p><b>THE DEEP DIVE:</b> The planets are twice as wide, and every planet has a CORE! Blast, punch or dive into the ground to dig down through four layers (topsoil, bedrock, magma, the deep). Find ancient idol fossils, treasure vaults, turrets and lava (freeze lava with Frost Breath). Steel blocks need Laser Eyes. Tap DASH again and again to build SPEED, and hold it to keep going fast (high speed rams through walls and drills through rock). Wreck too much and the army fights back (alert stars). Don't hit the green PROTECT vehicles. Clear the surface, then destroy the core to collapse the planet.</p><p><b>ALSO NEW:</b> Galaxies II-IV have their own rules (crushers and factories, spore clouds, darkness and gravity wells). Every Enforcer has a gimmick: read the hint above its health bar. Red-hot blocks explode in chains. Visit <b>Wayward</b> for a flyable home with the workshop, garage, Rampage Arena and launch pad (press <b>G</b> or tap the button at a sign). Beat the Chairman to recruit Captain Paragon and unlock New Game+.</p>
 <div class="row"><button class="big" id="helpGo">Got it</button></div>
 </div></div>
 
@@ -2272,7 +2272,7 @@ function drawHUD2(){
 var onTitle=true,newArm=0;
 function showTitle(){
   onTitle=true;document.body.classList.add('title');mode='space';document.body.classList.add('space');
-  $('tPlay').textContent=save.intro?'▶ Continue':'▶ Play';$('tVer').textContent='UNSUPERMAN 2 · GALACTIC REVOLT · V2.0';openOv('ovTitle');
+  $('tPlay').textContent=save.intro?'▶ Continue':'▶ Play';$('tVer').textContent='UNSUPERMAN 2 · THE DEEP DIVE · V2.5';openOv('ovTitle');
 }
 $('tPlay').addEventListener('click',function(){
   initAudio();onTitle=false;document.body.classList.remove('title');
@@ -2315,7 +2315,7 @@ slamImpact=wrapPw(slamImpact,'slam');updRipples=wrapPw(updRipples,'slam');updMet
 updRings=wrapPw(updRings,'clap');doLaser=wrapPw(doLaser,'laser');updWaves=wrapPw(updWaves,'wave');
 
 /* ================= DEBUG PANEL (hidden) =================
- TRIGGER: on the TITLE screen tap the small version line ("UNSUPERMAN · GALACTIC REVOLT · V2.1") 5 times quickly,
+ TRIGGER: on the TITLE screen tap the small version line ("UNSUPERMAN 2 · THE DEEP DIVE · V2.5") 5 times quickly,
  or on the PAUSE screen tap the "PAUSED" heading 5 times quickly. Then enter the code on the keypad.
  CODE: 2057 (change DBG_CODE below to alter it). Panel works on phone and PC. */
 var DBG_CODE='2057',dbgIn='',dbgOk=false,dbgFrom='title',dbgTaps=0,dbgTapT=0;
@@ -2425,7 +2425,7 @@ function freeGaps(minW){
 var FACDEF={k:'factory',w:76,h:110,hp:1,sp:0};
 var _genPlanet=genPlanet;
 genPlanet=function(i){
-  WORLD_W=9000;U2.hubOn=false;hubBtnHide();
+  WORLD_W=18000;SCALE=WORLD_W/4500;U2.hubOn=false;hubBtnHide();
   _genPlanet(i);
   rulesInit(i);
   if(U2.rampPending===i){U2.ramp={i:i,t:120,sc:0,done:false,end:0};U2.rampPending=-1;bossSpawned=true;}else U2.ramp=null;
@@ -3052,6 +3052,457 @@ showTitle=function(){_showTitle();$('tImport').style.display=(U2.oldSave&&!save.
 try{U2.oldSave=!localStorage.getItem(SAVE_KEY)&&!!localStorage.getItem('unsuperman_v1');}catch(e){}
 $('tImport').addEventListener('click',function(){try{localStorage.setItem(SAVE_KEY,localStorage.getItem('unsuperman_v1'));location.reload();}catch(e){}});
 
+/* ================= UNSUPERMAN 2 DEEP DIVE MODULE =================
+   Underground digging (4 layers), planet cores, long maps with zones, dash chaining,
+   weak spots, alert level, rescue vehicles, landmarks. ES5, spliced inside the game IIFE. */
+var UC=40,UROWS=64,U3W=18000;
+var U3={on:false,cols:0,T:null,H:null,caves:[],tur:[],items:[],gey:[],found:[],core:null,coreDead:false,hint:false,
+  sp:1,stk:0,dashT:-9,btnHeld:false,ore:0,oreT:0,heat:0,heatLv:0,heatQuiet:0,lastD:0,zone:-1,zoneT:0,lm:[],resc:[],cine:null,
+  cineDone:false,collapse:false,tgt:null,tgtT:0,armHint:false,layerSeen:-1,lastLava:0,depthBest:0,geyHint:false,mult:1};
+var HPT=[0,26,70,90,140,520,210,1,0,230,60000];
+var LAYN=['TOPSOIL & BUNKERS','BEDROCK & ORE','MAGMA DEPTHS','THE DEEP'];
+var ZNAME=['DOWNTOWN','INDUSTRIAL YARDS','MILITARY ZONE'];
+function layerOf(r){return r<10?0:(r<30?1:(r<48?2:3));}
+function zoneAt(x){var f=x/WORLD_W;return f<.34?0:(f<.67?1:2);}
+function u3save(){if(!save.u3)save.u3={fos:0,cores:{},best:0};return save.u3;}
+
+/* ---------- generation ---------- */
+function ugi(c,r){return r*U3.cols+c;}
+function ugBlob(rng,cx,cy,rx,ry,t,only){
+  for(var r=Math.floor(cy-ry-1);r<=cy+ry+1;r++)for(var c=Math.floor(cx-rx-1);c<=cx+rx+1;c++){
+    if(r<0||r>=UROWS-2||c<0||c>=U3.cols)continue;var dx=(c-cx)/rx,dy=(r-cy)/ry;if(dx*dx+dy*dy>1)continue;
+    var i=ugi(c,r);if(only&&U3.T[i]===0)continue;if(U3.T[i]===10)continue;U3.T[i]=t;}
+}
+function ugRect(c0,r0,w,h,t){for(var r=r0;r<r0+h;r++)for(var c=c0;c<c0+w;c++){if(r<0||r>=UROWS-2||c<0||c>=U3.cols)continue;U3.T[ugi(c,r)]=t;}}
+function genUnder(i,rng){
+  var cols=Math.ceil(WORLD_W/UC);U3.cols=cols;U3.T=new Uint8Array(cols*UROWS);U3.H=new Float32Array(cols*UROWS);
+  U3.caves=[];U3.tur=[];U3.items=[];U3.gey=[];U3.found=[];U3.core=null;U3.coreDead=false;U3.hint=false;U3.cine=null;U3.cineDone=false;U3.collapse=false;U3.layerSeen=-1;U3.armHint=false;
+  var r,c,t;
+  for(r=0;r<UROWS;r++)for(c=0;c<cols;c++){
+    t=r<10?1:(r<30?2:(r<48?4:2));if(r>=UROWS-2)t=10;
+    if(r<10&&rng()<.07)t=2;if(r>=30&&r<48&&rng()<.1)t=2;
+    U3.T[ugi(c,r)]=t;}
+  var n,k;
+  for(n=0;n<cols/5;n++)ugBlob(rng,rng()*cols,12+rng()*16,1.3+rng()*1.4,1.1+rng()*1.2,3,true);
+  for(n=0;n<cols/6;n++)ugBlob(rng,rng()*cols,31+rng()*16,1.3+rng()*1.4,1.1+rng()*1.2,3,true);
+  for(n=0;n<cols/8;n++)ugBlob(rng,rng()*cols,50+rng()*10,1.3+rng()*1.4,1.1+rng()*1.2,3,true);
+  for(n=0;n<cols/9;n++)ugBlob(rng,rng()*cols,35+rng()*10,2+rng()*3.5,1+rng()*1.3,7,true);
+  for(n=0;n<cols/16;n++)ugBlob(rng,rng()*cols,13+rng()*15,1.5+rng()*1.2,1.2+rng()*1,5,true);
+  for(n=0;n<cols/9;n++)ugBlob(rng,rng()*cols,50+rng()*9,1.6+rng()*1.4,1.2+rng()*1,5,true);
+  // core chamber
+  var cc=Math.floor(cols/2),cr=54;
+  for(r=cr-10;r<=cr+10;r++)for(c=cc-11;c<=cc+11;c++){if(r<0||r>=UROWS-2||c<0||c>=cols)continue;var d=Math.hypot(c-cc,r-cr);
+    if(d<6.6)U3.T[ugi(c,r)]=0;else if(d<8.8)U3.T[ugi(c,r)]=5;}
+  var cx=cc*UC+UC/2,cy=GROUND+cr*UC+UC/2;
+  var f=Math.min(2.2,1+PI_*.03);U3.mult=f;
+  U3.core={x:cx,y:cy,r:62,hp:1,max:1,flash:0,sh:0,shT:6,atk:2.5,dead:false};
+  var cm=PL.hpm*(1+.25*save.clears[i]+.35*save.ng);U3.core.max=U3.core.hp=1300*cm*(1+PI_*.05);
+  for(k=0;k<4;k++){var ta=k*TAU/4+.78;U3.tur.push({x:cx+Math.cos(ta)*200,y:cy+Math.sin(ta)*200,hp:140*f,max:140*f,fire:rr(0,1.5),dead:false,fl:0,core:true});}
+  // caves
+  var rects=[{c:cc-14,r:cr-12,w:28,h:24}],kinds=['bunker','bunker','vault','ruin','ruin','forge','sewer','vault'],tries=0,placed=0,want=Math.max(10,Math.round(cols/16)),idols=0;
+  while(placed<want&&tries<400){tries++;
+    var kd=kinds[Math.floor(rng()*kinds.length)],w,h,r0;
+    if(kd==='bunker'){w=11+Math.floor(rng()*4);h=5;r0=2+Math.floor(rng()*3);}
+    else if(kd==='vault'){w=7+Math.floor(rng()*2);h=4;r0=14+Math.floor(rng()*14);}
+    else if(kd==='ruin'){w=10+Math.floor(rng()*3);h=5;r0=20+Math.floor(rng()*24);}
+    else if(kd==='forge'){w=13+Math.floor(rng()*4);h=6;r0=36+Math.floor(rng()*8);}
+    else {w=30+Math.floor(rng()*10);h=2;r0=3+Math.floor(rng()*2);}
+    var c0=3+Math.floor(rng()*(cols-w-6)),ok=true;
+    for(k=0;k<rects.length;k++){var q=rects[k];if(c0<q.c+q.w+2&&c0+w+2>q.c&&r0<q.r+q.h+2&&r0+h+2>q.r){ok=false;break;}}
+    if(!ok)continue;rects.push({c:c0,r:r0,w:w,h:h});placed++;
+    var ring=kd==='bunker'?6:(kd==='vault'?5:(kd==='forge'?4:(kd==='ruin'?2:0)));
+    if(ring)ugRect(c0-1,r0-1,w+2,h+2,ring);ugRect(c0,r0,w,h,0);
+    var fy=GROUND+(r0+h)*UC,fx=GROUND;
+    U3.caves.push({k:kd,c:c0,r:r0,w:w,h:h});
+    if(kd==='bunker'||kd==='forge'||kd==='ruin'){var nt=kd==='forge'?3:2;for(k=0;k<nt;k++)U3.tur.push({x:(c0+1+rng()*(w-2))*UC+UC/2,y:GROUND+(r0+(k&1?h-1:0))*UC+UC/2,hp:110*f,max:110*f,fire:rr(0,1.6),dead:false,fl:0});}
+    var ix=(c0+w/2)*UC+UC/2*(rng()<.5?-1:1);
+    if(kd==='ruin'){U3.items.push({x:ix,y:fy-24,k:'idol',got:false});idols++;}
+    else if(kd!=='sewer'||rng()<.6)U3.items.push({x:ix,y:fy-20,k:'chest',got:false,big:kd==='vault'||kd==='forge'});
+    if(kd==='forge'){for(k=0;k<3;k++)U3.gey.push({x:(c0+2+k*(w-4)/2)*UC+UC/2,y:GROUND+(r0+h)*UC,t:rr(0,4),ph:0});}
+  }
+  if(idols<2){/* guarantee two ancient idols near the middle layers */
+    for(k=idols;k<2;k++){var ic=Math.floor(cols*(.25+.5*k)+rng()*8),ir=24+k*8;ugRect(ic-3,ir-1,7,4,0);U3.items.push({x:(ic)*UC+UC/2,y:GROUND+(ir+3)*UC-24,k:'idol',got:false});}}
+  // foundations under factories
+  for(k=0;k<ents.length;k++){var e=ents[k];if(e.fac){var fc=Math.floor((e.x+e.w/2)/UC);if(fc>=1&&fc<cols-1){ugRect(fc-1,0,3,4,1);U3.T[ugi(fc,4)]=9;e.foundC=fc;e.lastHp=e.hp;e.hitT=-9;e.cut=false;U3.found.push({c:fc,r:4,fac:e});}}}
+  for(r=0;r<UROWS;r++)for(c=0;c<cols;c++){var ii=ugi(c,r),tt=U3.T[ii];U3.H[ii]=tt===7?1:HPT[tt]*(tt===10||tt===7?1:f);}
+}
+
+/* ---------- genPlanet wrapper: long map, zones, landmarks, armor, rescue ---------- */
+var _genPlanet3=genPlanet;
+genPlanet=function(i){
+  u3save();WORLD_W=U3W;SCALE=WORLD_W/4500;
+  _genPlanet3(i);
+  U3.on=true;GH=GROUND+UROWS*UC;WBOTTOM=GH+140;
+  var rng=mulberry32(5150+i*71),k,e,d,mult=PL.hpm*(1+.25*save.clears[i]+.35*save.ng);
+  U3.sp=1;U3.stk=0;U3.heat=0;U3.heatLv=0;U3.zone=-1;U3.moonShown=false;U3.lm=[];U3.resc=[];U3.ore=0;
+  // armored blocks (need Laser Eyes)
+  if(i>=4){for(k=0;k<ents.length;k++){e=ents[k];if(e.t==='block'&&!e.vol&&rng()<.065){e.arm=true;e.hp*=2.2;e.max*=2.2;}}}
+  // landmarks: tallest building in each third gets tripled HP and a beacon
+  for(var z=0;z<3;z++){var best=null;for(k=0;k<blds.length;k++){var b=blds[k];if(b.rows<2)continue;var zz=zoneAt(b.x);if(zz!==z)continue;if(!best||b.rows>best.rows)best=b;}
+    if(best){best.lm=ZNAME[z];best.lmDone=false;for(var cI=0;cI<best.grid.length;cI++)for(var rI=0;rI<best.grid[cI].length;rI++){var bk=best.grid[cI][rI];if(bk){bk.hp*=3;bk.max*=3;}}U3.lm.push(best);}}
+  // zone extras: military zone gets tanks and gunners, downtown gets police drones
+  var mk2=function(kind,def,x){var q=mk(kind,0,0,def.w,def.h,def.hp*mult*1.3);q.def=def;q.col=pickC(kind==='vehicle'?def.pal:def.c1,rng);q.dir=rng()<.5?-1:1;q.fire=rng()*3;q.tm=rng()*4;
+    if(kind==='vehicle'){q.lane=GROUND+14+rng()*8;q.x=x;q.y=q.lane-q.h;}else if(kind==='walker'){q.lane=GROUND+8+rng()*14;q.x=x;q.y=q.lane-q.h;}else{q.by=100+rng()*(GROUND-460);q.x=x;q.y=q.by;}return q;};
+  var wd=null;for(k=0;k<PL.walk.length;k++)if(PL.walk[k].sp>0){wd=PL.walk[k];break;}
+  for(k=0;k<14;k++){if(PL.veh.length)ents.push(mk2('vehicle',PL.veh[k%PL.veh.length],WORLD_W*(.67+.3*rng())));if(wd)ents.push(mk2('walker',wd,WORLD_W*(.67+.3*rng())));}
+  for(k=0;k<8&&PL.fly.length;k++)ents.push(mk2('flyer',PL.fly[0],WORLD_W*(.04+.28*rng())));
+  // rescue vehicles in downtown/industrial zones
+  var pool=[];for(k=0;k<ents.length;k++){e=ents[k];if(e.t==='vehicle'&&zoneAt(e.x)<2)pool.push(e);}
+  for(k=0;k<2&&pool.length;k++){e=pool.splice(Math.floor(rng()*pool.length),1)[0];e.rescue=true;U3.resc.push(e);}
+  total=0;for(k=0;k<ents.length;k++)total+=ents[k].max;
+  genUnder(i,rng);
+  buildGrid();hero.x=380;hero.y=420;camUpdate(0,true);
+  toast('🌍 '+PL.name+' has a core... dig down to destroy it!');
+};
+var _genHub3=genHub;
+genHub=function(){_genHub3();U3.on=false;GH=GROUND+24;WBOTTOM=1120;SCALE=WORLD_W/4500;};
+
+/* ---------- digging ---------- */
+function solidAt(x,y){if(y<GROUND)return false;var r=Math.floor((y-GROUND)/UC);if(r>=UROWS)return true;var c=Math.floor(x/UC);if(c<0||c>=U3.cols)return true;var t=U3.T[r*U3.cols+c];return t!==0&&t!==7;}
+function boxBlocked(x,y){return solidAt(x-9,y-14)||solidAt(x+9,y-14)||solidAt(x-9,y+14)||solidAt(x+9,y+14)||solidAt(x,y+14)||solidAt(x,y-14);}
+var TCOL={1:null,2:'#6f6a78',3:'#6f6a78',4:'#5c2e2a',5:'#8d98ab',6:'#9d9a90',9:'#c0392b',10:'#14111b'};
+function cellBreak(c,r,i){
+  var t=U3.T[i];U3.T[i]=0;U3.H[i]=0;var x=c*UC+UC/2,y=GROUND+r*UC+UC/2;
+  if(Math.random()<.5){var col=t===1?shade(PL.ground[1],-8):(t===4?'#7a3a30':(t===5?'#aab4c8':'#827b8c'));P_(x,y,rr(-120,120),rr(-170,20),rr(.4,.8),rr(4,9),col,700,0);}
+  if(t===3){U3.ore+=3+Math.floor(PI_*.35);U3.oreT=.1;P_(x,y,rr(-50,50),rr(-90,-20),.7,6,(c&1)?'#ffd54a':'#7ae8ff',0,2);}
+  if(t===9)foundCut(c);
+  // lava spreads into freshly dug cells that touch it
+  var nb=[[c-1,r],[c+1,r],[c,r-1],[c,r+1]];
+  for(var k=0;k<4;k++){var nc=nb[k][0],nr=nb[k][1];if(nc<0||nc>=U3.cols||nr<0||nr>=UROWS)continue;if(U3.T[nr*U3.cols+nc]===7&&Math.random()<.4){U3.T[i]=7;U3.H[i]=1;break;}}
+}
+function digAt(x,y,rad,amt,kind){
+  if(!U3.on)return;
+  var c0=Math.max(0,Math.floor((x-rad-UC)/UC)),c1=Math.min(U3.cols-1,Math.floor((x+rad+UC)/UC)),r0=Math.max(0,Math.floor((y-rad-UC-GROUND)/UC)),r1=Math.min(UROWS-1,Math.floor((y+rad+UC-GROUND)/UC));
+  for(var r=r0;r<=r1;r++)for(var c=c0;c<=c1;c++){
+    var i=r*U3.cols+c,t=U3.T[i];if(t===0||t===7||t===10)continue;
+    var cx=c*UC+UC/2,cy=GROUND+r*UC+UC/2,d=Math.hypot(cx-x,cy-y);if(d>rad+UC*.55)continue;
+    var res=t===5?(kind==='laser'?1:.12):(t===6?.7:1),kf=1-Math.min(1,d/(rad+UC))*.5;
+    U3.H[i]-=amt*kf*res;if(U3.H[i]<=0)cellBreak(c,r,i);
+  }
+  var co=U3.core;if(co&&!co.dead&&Math.hypot(co.x-x,co.y-y)<rad+co.r)coreHurt(amt*(kind==='laser'?.9:.6));
+  for(var k=0;k<U3.tur.length;k++){var tu=U3.tur[k];if(tu.dead)continue;if(Math.hypot(tu.x-x,tu.y-y)<rad+18){tu.hp-=amt*.8;tu.fl=.1;if(tu.hp<=0)turDie(tu);}}
+}
+function turDie(tu){tu.dead=true;explos.push({x:tu.x,y:tu.y,r:50,t:0,m:.35,c:'#ff9a30'});for(var k=0;k<6;k++)P_(tu.x,tu.y,rr(-150,150),rr(-170,20),.6,6,'#ffb030',300,4);addShards(6+Math.floor(PI_*.4));SFX.boom();}
+function foundCut(c){
+  for(var k=0;k<U3.found.length;k++){var f=U3.found[k];if(f.c===c&&f.fac&&!f.fac.cut){f.fac.cut=true;if(!f.fac.dead){dmg(f.fac,f.fac.max*.3);addText(f.fac.x+f.fac.w/2,f.fac.y-24,'FOUNDATION CUT!','#ffb03a');toast('🏭 Foundation destroyed: that factory can no longer repair itself!');shake(8);}}}
+}
+var _doLaser3=doLaser;
+doLaser=function(dt,lv){
+  _doLaser3(dt,lv);if(!U3.on||!laserFx)return;
+  var b=laserFx.b,pierce=lv>=5?3:1;
+  for(var k=0;k<b.length;k++){var s=b[k],dx=s.x1-s.x0,dy=s.y1-s.y0,L=Math.hypot(dx,dy);if(L<2)continue;dx/=L;dy/=L;var hits=0;
+    for(var t=0;t<=L;t+=12){var px=s.x0+dx*t,py=s.y0+dy*t;
+      var co=U3.core;if(co&&!co.dead&&Math.hypot(px-co.x,py-co.y)<co.r){coreHurt((95+45*lv)*dt*1.3);s.x1=px;s.y1=py;break;}
+      if(py>=GROUND&&solidAt(px,py)){digAt(px,py,laserFx.w*.5+9,(95+45*lv)*dt*1.5,'laser');hits++;if(hits>=pierce){s.x1=px;s.y1=py;break;}}}}
+};
+var _explode3=explode;
+explode=function(x,y,R,dm,col){_explode3(x,y,R,dm,col);if(U3.on&&y>GROUND-R)digAt(x,y,R*.8,dm*1.4,'boom');};
+var _doPunch3=doPunch;
+doPunch=function(){_doPunch3();if(U3.on){var R=ultT>0?200:92,px=hero.x+Math.cos(aim)*34,py=hero.y+Math.sin(aim)*34;if(py>GROUND-R)digAt(px,py,R,320+40*save.gear[4],'punch');}};
+var _slam3=slamImpact;
+slamImpact=function(lv){
+  if(!U3.on){_slam3(lv);return;}
+  var R=130+55*lv;
+  if(hero.y>GROUND+60){digAt(hero.x,hero.y+26,R*.75,520+140*lv,'boom');explos.push({x:hero.x,y:hero.y+20,r:R*.7,t:0,m:.4,c:'#ffe0a0'});for(var k=0;k<10;k++)P_(hero.x,hero.y+20,rr(-220,220),rr(-260,60),rr(.4,.9),rr(5,9),'#b9a98a',600,0);shake(9+lv*2);SFX.boom();hero.slam=false;hero.vy=-60;return;}
+  var hy=hero.y;_slam3(lv);hero.y=Math.min(hy,GROUND-18);hero.vy=-80;digAt(hero.x,GROUND+8,R*.8,520+140*lv,'boom');
+};
+var _updHoles3=updHoles;
+updHoles=function(dt){if(U3.on)for(var i=0;i<holes.length;i++){var h=holes[i];if(h.y>GROUND-h.R)digAt(h.x,h.y,h.R*.5,520*dt,'boom');}_updHoles3(dt);};
+var _doFreeze3=doFreeze;
+doFreeze=function(dt,lv){
+  _doFreeze3(dt,lv);if(!U3.on||!coneFx)return;
+  var cf=coneFx,c0=Math.max(0,Math.floor((cf.x-cf.R)/UC)),c1=Math.min(U3.cols-1,Math.floor((cf.x+cf.R)/UC)),r0=Math.max(0,Math.floor((cf.y-cf.R-GROUND)/UC)),r1=Math.min(UROWS-1,Math.floor((cf.y+cf.R-GROUND)/UC));
+  for(var r=r0;r<=r1;r++)for(var c=c0;c<=c1;c++){var i=r*U3.cols+c;if(U3.T[i]!==7)continue;
+    var x=c*UC+UC/2,y=GROUND+r*UC+UC/2,d=Math.hypot(x-cf.x,y-cf.y);if(d>cf.R)continue;
+    if(cf.half<PI&&Math.abs(angDiff(Math.atan2(y-cf.y,x-cf.x),cf.ang))>cf.half+.3)continue;
+    U3.T[i]=2;U3.H[i]=60*U3.mult;for(var k=0;k<3;k++)P_(x,y,rr(-60,60),rr(-120,-20),.6,rr(4,8),'#d6f4ff',0,2);}
+};
+
+/* ---------- core ---------- */
+function coreHurt(a){
+  var co=U3.core;if(!co||co.dead)return;if(co.sh>0)a*=.08;
+  co.hp-=a;co.flash=.08;if(co.hp<=0)coreBlow();
+}
+function coreBlow(){
+  var co=U3.core;co.dead=true;co.hp=0;U3.coreDead=true;u3save().cores[PI_]=1;persist();
+  U3.cine={t:0,dur:PI_===32?2.6:2.2,big:false,cb:null,seed:Math.random()*999};U3.collapse=true;
+  toast('💥 THE CORE IS DESTROYED! THE PLANET IS COLLAPSING!');flashA=1;shake(30);buzz([80,40,160,40,300]);SFX.boom();
+  for(var k=0;k<40;k++){var a=rr(0,TAU),s=rr(120,520);P_(co.x,co.y,Math.cos(a)*s,Math.sin(a)*s,rr(.8,1.6),rr(6,14),k&1?'#ffd54a':'#ff6a2a',0,2);}
+  explos.push({x:co.x,y:co.y,r:360,t:0,m:.9,c:'#ffd070'});
+  pipSay('THE WHOLE PLANET IS COMING APART!',4);
+}
+function coreUpdate(dt){
+  var co=U3.core;if(!co||co.dead)return;
+  if(co.flash>0)co.flash-=dt;
+  var dh=Math.hypot(hero.x-co.x,hero.y-co.y);
+  if(dh<900){
+    co.shT-=dt;if(co.shT<=0){co.sh=1.6;co.shT=7+rr(0,2);toast('🛡 CORE SHIELD PULSE!');}
+    if(co.sh>0){co.sh-=dt;if(dh<170){hero.vx+=(hero.x-co.x)/dh*900*dt*3;hero.vy+=(hero.y-co.y)/dh*900*dt*3;}}
+    co.atk-=dt;if(co.atk<=0){co.atk=Math.max(1.5,3.1-PI_*.02);var n=10+Math.min(8,Math.floor(PI_/4)),ph=Math.random()*TAU;for(var k=0;k<n;k++){var a=ph+k*TAU/n;shots.push({x:co.x,y:co.y,vx:Math.cos(a)*230,vy:Math.sin(a)*230,l:4,c:'#ff7a3a'});}SFX.whoosh();}
+  }
+}
+
+/* ---------- per-frame systems ---------- */
+function turUpdate(dt){
+  for(var k=0;k<U3.tur.length;k++){var tu=U3.tur[k];if(tu.dead)continue;if(tu.fl>0)tu.fl-=dt;
+    var dx=hero.x-tu.x,dy=hero.y-tu.y,d=Math.hypot(dx,dy);if(d>560||d<1)continue;
+    tu.fire-=dt;if(tu.fire<=0){tu.fire=1.7+rr(0,.5);shoot(tu.x,tu.y,dx/d,dy/d,'#ff6a4a');}}
+}
+function geyUpdate(dt){
+  for(var k=0;k<U3.gey.length;k++){var g=U3.gey[k];g.t+=dt;var cyc=g.t%5;g.ph=cyc>3.4?1:(cyc>2.4?.5:0);
+    if(g.ph===1&&Math.abs(hero.x-g.x)<26&&hero.y<g.y&&hero.y>g.y-300){hurtHero(14,0);hero.vy-=420*dt*8;}
+    if(g.ph===1&&Math.random()<.6)P_(g.x+rr(-10,10),g.y-rr(0,200),rr(-20,20),-rr(100,300),.5,rr(4,8),'#ff8a2a',0,2);}
+}
+function itemUpdate(dt){
+  for(var k=0;k<U3.items.length;k++){var it=U3.items[k];if(it.got)continue;if(Math.hypot(hero.x-it.x,hero.y-it.y)<44){it.got=true;
+    if(it.k==='idol'){u3save().fos++;var fm=[5,10,20,40].indexOf(u3save().fos);if(fm>=0){save.pts++;later(1.2,function(){toast('🗿 FOSSIL MILESTONE ('+u3save().fos+')! +1 power point');});}var g=addShards(300+PI_*14);toast('🗿 ANCIENT IDOL FOSSIL! +'+g+' 💠  ('+u3save().fos+' found)');buzz([40,30,90]);for(var q=0;q<18;q++)P_(it.x,it.y,rr(-200,200),rr(-240,40),rr(.6,1.2),rr(4,8),q&1?'#ffd54a':'#9ae8ff',200,2);persist();}
+    else{var g2=addShards((it.big?160:70)+PI_*6);toast('🧰 Treasure! +'+g2+' 💠');for(var q2=0;q2<10;q2++)P_(it.x,it.y,rr(-150,150),rr(-200,0),rr(.5,1),rr(4,7),'#ffd54a',200,2);}
+  }}
+}
+function foundUpdate(dt){
+  for(var k=0;k<ents.length;k++){var e=ents[k];if(!e.fac||e.dead)continue;
+    if(e.hp<e.lastHp-.01)e.hitT=T;e.lastHp=e.hp;
+    if(!e.cut&&T-e.hitT>2.5&&e.hp<e.max){e.hp=Math.min(e.max,e.hp+e.max*.06*dt);e.lastHp=e.hp;}}
+}
+function heatUpdate(dt){
+  var dd=destroyed-U3.lastD;U3.lastD=destroyed;
+  if(dd>0){U3.heat=Math.min(100,U3.heat+dd/Math.max(1,total)*260);U3.heatQuiet=0;}else{U3.heatQuiet+=dt;if(U3.heatQuiet>6)U3.heat=Math.max(0,U3.heat-4*dt);}
+  var lv=U3.heat>=90?4:(U3.heat>=70?3:(U3.heat>=45?2:(U3.heat>=20?1:0)));
+  if(lv>U3.heatLv){U3.heatLv=lv;squad(lv);}else if(lv<U3.heatLv-0&&U3.heat<U3.heatLv*18)U3.heatLv=lv;
+}
+function squad(lv){
+  var sx=hero.x+(Math.random()<.5?-1:1)*rr(720,900),mult=PL.hpm*(1+.25*save.clears[PI_]+.35*save.ng),e,k,n;
+  var fd=PL.fly[0],wd=null;for(k=0;k<PL.walk.length;k++)if(PL.walk[k].sp>0){wd=PL.walk[k];break;}
+  var names=['','POLICE DRONES','ARMY GUNNERS','ENFORCER SQUAD','HEAVY GUNSHIPS'];
+  toast('🚨 ALERT LEVEL '+lv+': '+names[lv]+' incoming!');SFX.whoosh();pipSay('They sent the '+names[lv].toLowerCase()+'!',3);
+  var cnt=lv===1?3:(lv===2?4:(lv===3?3:2));
+  for(n=0;n<cnt;n++){
+    if(lv===2&&wd){e=mk('walker',0,0,wd.w,wd.h,wd.hp*mult*1.2);e.def=wd;e.col=pickC(wd.c1,Math.random);e.lane=GROUND+10+rr(0,10);e.x=clamp(sx+rr(-120,120),100,WORLD_W-100);e.y=e.lane-e.h;}
+    else if(fd){var big=lv===4,sc=big?1.6:1;e=mk('flyer',0,0,fd.w*sc,fd.h*sc,fd.hp*mult*(lv===1?.7:(lv===3?2.4:5)));e.def=fd;e.col=pickC(fd.c1,Math.random);e.by=rr(160,GROUND-420);e.x=clamp(sx+rr(-160,160),100,WORLD_W-100);e.y=e.by;if(lv>=3){e.elite=true;e.name=lv===4?'Gunship':'Enforcer';}}
+    else continue;
+    e.noMeter=true;e.minion=true;e.dir=Math.random()<.5?-1:1;e.fire=rr(0,2);ents.push(e);
+  }
+}
+function zoneUpdate(dt){
+  var z=zoneAt(hero.x);if(z!==U3.zone){U3.zone=z;U3.zoneT=3;if(hero.x>200)toast('📍 '+ZNAME[z]+(z===2?' — heavy military presence!':z===1?' — factories everywhere':' — dense skyline'));}
+  if(U3.zoneT>0)U3.zoneT-=dt;
+  for(var k=0;k<U3.lm.length;k++){var b=U3.lm[k];if(!b.lmDone&&b.alive<=0){b.lmDone=true;var g=addShards(140+PI_*8);toast('🏆 LANDMARK DOWN: '+b.lm+' tower! +'+g+' 💠');shake(12);flashA=.4;}}
+  U3.tgtT-=dt;if(U3.tgtT<=0){U3.tgtT=.5;var best=null,bd=1e9;
+    for(var i=0;i<ents.length;i++){var e=ents[i];if(e.dead||e.t!=='block'||e.noMeter)continue;var d=Math.abs(e.x-hero.x)+Math.abs(e.y-hero.y)*.3;if(d<bd){bd=d;best=e;}}
+    U3.tgt=best?{x:best.x+best.w/2,y:best.y+best.h/2}:null;}
+}
+function oreFlush(dt){if(U3.ore>0){U3.oreT-=dt;if(U3.oreT<=0||U3.ore>=15){var g=addShards(U3.ore);addText(hero.x,hero.y-34,'+'+g+' 💠','#ffe14a');U3.ore=0;}}}
+function depthUpdate(){
+  var d=Math.max(0,Math.floor((hero.y-GROUND)/UC));var st=u3save();if(d>st.best)st.best=d;
+  if(hero.y>GROUND+20){var L=layerOf(d);if(L!==U3.layerSeen){U3.layerSeen=L;toast('⬇ '+LAYN[L]);}}else if(U3.layerSeen!==-1&&hero.y<GROUND-10)U3.layerSeen=-1;
+  // lava burns
+  if(hero.y>GROUND){var r=Math.floor((hero.y-GROUND)/UC),c=Math.floor(hero.x/UC);if(r>=0&&r<UROWS&&c>=0&&c<U3.cols&&U3.T[r*U3.cols+c]===7&&T-U3.lastLava>.35){U3.lastLava=T;hurtHero(9,0);P_(hero.x,hero.y,rr(-90,90),rr(-120,0),.5,5,'#ff8a2a',0,2);}}
+}
+function collapseUpdate(dt){
+  if(!U3.collapse||doneFlag)return;
+  var target=save.boss[PI_]?total*.996:total*.31;
+  var n=0;
+  while(destroyed<target&&n<60){var picked=null;for(var t=0;t<30&&!picked;t++){var e=ents[Math.floor(Math.random()*ents.length)];if(e&&!e.dead&&e.t!=='boss'&&!e.noMeter&&!e.rescue)picked=e;}
+    if(!picked){for(var j=0;j<ents.length;j++){if(!ents[j].dead&&ents[j].t!=='boss'&&!ents[j].noMeter&&!ents[j].rescue){picked=ents[j];break;}}}
+    if(!picked){destroyed=target;break;}
+    if(Math.random()<.4)explos.push({x:picked.x+picked.w/2,y:picked.y+picked.h/2,r:46,t:0,m:.3,c:'#ffb040'});forceKill(picked);n++;}
+  if(Math.random()<dt*9){var fx=cam.x+rr(0,W/zoom),fy=cam.y+rr(0,H/zoom);explos.push({x:fx,y:fy,r:rr(60,140),t:0,m:.4,c:'#ffb040'});shake(5);}
+}
+function cineUpdate(dt){var c=U3.cine;if(!c)return;c.t+=dt;if(c.t>=c.dur){var cb=c.cb;U3.cine=null;if(cb)cb();}}
+var _showComplete3=showComplete;
+showComplete=function(){
+  var rs=0;for(var k=0;k<U3.resc.length;k++)if(!U3.resc[k].dead)rs++;
+  if(U3.on&&rs>0&&!U3.rescPaid){U3.rescPaid=true;var g=addShards(220*rs);toast('🚑 You protected '+rs+' rescue vehicle'+(rs>1?'s':'')+'! +'+g+' 💠');}
+  if(U3.on&&PI_===32&&!U3.moonShown){U3.moonShown=true;U3.cine={t:0,dur:6,big:true,seed:7,cb:function(){_showComplete3();}};buzz([120,60,120,60,400]);pipSay('THE MOON... IT\'S SPLITTING IN HALF!',5);return;}
+  _showComplete3();
+};
+var _kill3=kill;
+kill=function(e){
+  if(e.rescue&&!e.dead){var loss=Math.min(save.shards,120);save.shards-=loss;toast('⚠ You wrecked a rescue vehicle! -'+loss+' 💠');combo=0;comboT=0;}
+  _kill3(e);
+};
+var _dmg3=dmg;
+dmg=function(e,a){
+  if(a>0&&!e.dead&&e.t!=='boss'){if(e.frz>=.4&&!flag('tipShatter')){setFlag('tipShatter');persist();toast('❄ FROZEN! Now hit it with Punch, Dive Slam, Clap or Meteors to SHATTER it!');}else if(e.shock>0&&!flag('tipShock')){setFlag('tipShock');persist();toast('⚡ SHOCKED! Punch or Slam it for THUNDERCLAP, or use Laser Eyes for OVERCHARGE!');}}
+  if(e.arm&&!e.dead&&a>0&&pwk!=='laser'){if(!U3.armHint){U3.armHint=true;toast('🔩 STEEL BLOCKS! Only Laser Eyes can cut through them.');}a*=.18;}
+  return _dmg3(e,a);
+};
+var _drawBlock3=drawBlock;
+drawBlock=function(e){
+  _drawBlock3(e);
+  if(e.arm&&!e.dead){ctx.fillStyle='rgba(120,135,160,.55)';ctx.fillRect(e.x+1,e.y+1,e.w-2,e.h-2);ctx.strokeStyle='#d6e0f0';ctx.lineWidth=2;ctx.strokeRect(e.x+3,e.y+3,e.w-6,e.h-6);
+    ctx.fillStyle='#e8f0ff';ctx.fillRect(e.x+5,e.y+5,3,3);ctx.fillRect(e.x+e.w-8,e.y+5,3,3);ctx.fillRect(e.x+5,e.y+e.h-8,3,3);ctx.fillRect(e.x+e.w-8,e.y+e.h-8,3,3);}
+};
+
+/* ---------- dash chaining & afterburner, sonic ram, collision ---------- */
+var _tryDash3=tryDash;
+tryDash=function(){
+  var before=hero.dash;_tryDash3();
+  if(mode==='space'||overlay)return;
+  if(hero.dash>0&&hero.dash!==before&&T-U3.dashT>.02){
+    U3.stk=(T-U3.dashT<1.7)?Math.min(6,U3.stk+1):1;U3.dashT=T;U3.sp=Math.min(3.6,1+.45*U3.stk);
+    hero.dcd=Math.max(.14,.78-.11*U3.stk);hero.dash=.2+.02*U3.stk;
+    if(U3.stk>=3)addText(hero.x,hero.y-36,'SPEED x'+U3.sp.toFixed(1),'#9ae8ff');
+  }
+};
+(function(){var db=$('dashBtn');if(!db)return;
+  db.addEventListener('pointerdown',function(){U3.btnHeld=true;U3.btnId=arguments[0].pointerId;});
+  var rel=function(ev){if(ev.pointerId===U3.btnId||ev.type==='blur')U3.btnHeld=false;};
+  window.addEventListener('pointerup',rel,true);window.addEventListener('pointercancel',rel,true);window.addEventListener('blur',function(){U3.btnHeld=false;});
+  db.addEventListener('lostpointercapture',function(){U3.btnHeld=false;});
+})();
+var _updatePlanet3=updatePlanet;
+updatePlanet=function(dt){
+  if(!U3.on||U2.hubOn){_updatePlanet3(dt);return;}
+  var px=hero.x,py=hero.y,baseSp=hero.spdM;
+  var held=(keys['shift']||U3.btnHeld)&&hero.stun<=0;
+  if(held&&U3.sp>1.05&&hero.en>3){U3.dashT=T;hero.en=Math.max(0,hero.en-5*dt*U3.sp);if(Math.hypot(hero.vx,hero.vy)>200)U3.sp=Math.min(3.6,U3.sp+.12*dt);}
+  else if(T-U3.dashT>1.2){U3.sp=Math.max(1,U3.sp-1.7*dt);if(U3.sp<=1.02)U3.stk=0;}
+  hero.spdM=baseSp*U3.sp;
+  try{_updatePlanet3(dt);}finally{hero.spdM=baseSp;}
+  // collision against dug ground
+  if(hero.y>GROUND-60&&boxBlocked(hero.x,hero.y)){
+    var nx=hero.x,ny=hero.y;
+    if(!boxBlocked(nx,py)){hero.y=py;if(hero.slam)slamImpact(hero.slamLv);hero.vy=0;}
+    else if(!boxBlocked(px,ny)){hero.x=px;hero.vx=0;}
+    else{hero.x=px;hero.y=py;hero.vx=hero.vy=0;if(hero.slam)slamImpact(hero.slamLv);}
+    if(hero.slam&&boxBlocked(hero.x,hero.y+6))slamImpact(hero.slamLv);
+  }
+  // sonic ram + drill dive
+  var spd=Math.hypot(hero.vx,hero.vy);
+  if(U3.sp>=1.8&&spd>520){
+    var vx=hero.vx/spd,vy=hero.vy/spd;
+    if(hero.y>GROUND-40)digAt(hero.x+vx*26,hero.y+vy*26,20,820*dt*U3.sp,'punch');
+    var q=query(hero.x-28,hero.y-28,hero.x+28,hero.y+28,bufB);
+    for(var k=0;k<q.length;k++){var e=q[k];if(e.t==='boss'||e.rescue)continue;if(T-(e.ramT||-9)>.3){e.ramT=T;curSrc='punch';dmg(e,22*U3.sp*U3.sp);curSrc='';if(e.t==='walker'||e.t==='flyer'){e.kv=(e.x>hero.x?1:-1)*500;}}}
+    if(Math.random()<.5)P_(hero.x-vx*20,hero.y-vy*20,-vx*60,-vy*60,.3,4,'#bfe9ff',0,1);
+  }
+  // systems
+  if(!(U2.ramp&&!U2.ramp.done)){
+    heatUpdate(dt);
+    if(!U3.coreDead&&!doneFlag&&destroyed>total*.99){destroyed=total*.99;if(!U3.hint){U3.hint=true;toast('🌋 SURFACE CLEARED! DIG DOWN TO THE CORE!');pipSay('Dig! The core is deep under the middle of the world!',5);}}
+  }
+  coreUpdate(dt);turUpdate(dt);geyUpdate(dt);itemUpdate(dt);foundUpdate(dt);zoneUpdate(dt);oreFlush(dt);depthUpdate();collapseUpdate(dt);cineUpdate(dt);
+};
+
+/* ---------- drawing ---------- */
+function drawUnder(){
+  var vw=W/zoom,vh=H/zoom;if(cam.y+vh<GROUND-20)return;
+  var g=ctx.createLinearGradient(0,GROUND,0,GH);g.addColorStop(0,shade(PL.ground[1],-50));g.addColorStop(.5,'#1d1018');g.addColorStop(1,'#07040c');
+  ctx.fillStyle=g;ctx.fillRect(cam.x-20,GROUND,vw+40,GH-GROUND+160);
+  var c0=Math.max(0,Math.floor(cam.x/UC)),c1=Math.min(U3.cols-1,Math.floor((cam.x+vw)/UC)),r0=Math.max(0,Math.floor((cam.y-GROUND)/UC)),r1=Math.min(UROWS-1,Math.floor((cam.y+vh-GROUND)/UC));
+  var gb=shade(PL.ground[1],-6),i,r,c,t,x,y,col,hh;
+  // cave dressing
+  for(i=0;i<U3.caves.length;i++){var cv=U3.caves[i];if(cv.c+cv.w<c0||cv.c>c1||cv.r+cv.h<r0||cv.r>r1)continue;
+    var cx0=cv.c*UC,cy0=GROUND+cv.r*UC;ctx.fillStyle=cv.k==='forge'?'rgba(255,110,40,.14)':(cv.k==='vault'?'rgba(255,214,90,.12)':(cv.k==='ruin'?'rgba(90,220,255,.10)':'rgba(255,255,200,.06)'));ctx.fillRect(cx0,cy0,cv.w*UC,cv.h*UC);
+    if(cv.k==='ruin'){ctx.strokeStyle='rgba(120,230,255,.35)';ctx.lineWidth=2;for(var q=0;q<cv.w;q+=2){ctx.beginPath();ctx.moveTo(cx0+q*UC+8,cy0+8);ctx.lineTo(cx0+q*UC+8,cy0+20);ctx.lineTo(cx0+q*UC+22,cy0+20);ctx.stroke();}}
+    if(cv.k==='bunker'){ctx.fillStyle='rgba(255,240,150,.8)';for(var q2=1;q2<cv.w;q2+=3)ctx.fillRect(cx0+q2*UC,cy0+2,14,4);}}
+  for(r=r0;r<=r1;r++)for(c=c0;c<=c1;c++){
+    i=r*U3.cols+c;t=U3.T[i];if(t===0)continue;x=c*UC;y=GROUND+r*UC;
+    var hv=(c*7+r*13)&3;
+    if(t===1)col=shade(PL.ground[1],-12+hv*4);else if(t===2||t===3)col=shade('#6f6a78',-22*r/UROWS*2+hv*3);else if(t===4)col=shade('#5c2e2a',hv*4);
+    else if(t===7){var pl=.5+.5*Math.sin(T*3+c*.8+r);col='rgb('+(235+Math.floor(20*pl))+','+(90+Math.floor(70*pl))+',20)';}
+    else col=TCOL[t];
+    ctx.fillStyle=col;ctx.fillRect(x,y,UC+1,UC+1);
+    if(t===7)continue;
+    ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(x,y+UC-2,UC,2);ctx.fillRect(x+UC-2,y,2,UC);
+    if(t===3){ctx.fillStyle=(c&1)?'#ffd54a':'#7ae8ff';ctx.fillRect(x+8,y+9,6,6);ctx.fillRect(x+24,y+22,7,7);ctx.fillRect(x+22,y+8,4,4);}
+    else if(t===4&&((c+r)%3===0)){ctx.fillStyle='rgba(255,120,40,.5)';ctx.fillRect(x+6,y+UC-12,UC-12,4);}
+    else if(t===5){ctx.strokeStyle='#d6e0f0';ctx.lineWidth=2;ctx.strokeRect(x+4,y+4,UC-8,UC-8);ctx.fillStyle='#e8f0ff';ctx.fillRect(x+6,y+6,3,3);ctx.fillRect(x+UC-9,y+UC-9,3,3);}
+    else if(t===6){ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(x,y+UC/2-1,UC,2);}
+    else if(t===9){var pu=.5+.5*Math.sin(T*6);ctx.fillStyle='rgba(255,230,120,'+(.5+.5*pu)+')';ctx.fillRect(x+10,y+10,UC-20,UC-20);ctx.strokeStyle='#fff';ctx.strokeRect(x+4,y+4,UC-8,UC-8);}
+    if(t!==10&&U3.H[i]<HPT[t]*U3.mult*.55){ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+6,y+8);ctx.lineTo(x+UC*.55,y+UC*.5);ctx.lineTo(x+UC-6,y+UC-8);ctx.stroke();}
+    if(r===0){ctx.fillStyle=PL.ground[0];ctx.fillRect(x,y,UC+1,6);}
+  }
+  // geysers
+  for(i=0;i<U3.gey.length;i++){var ge=U3.gey[i];if(ge.x<cam.x-60||ge.x>cam.x+vw+60)continue;
+    if(ge.ph===.5){ctx.fillStyle='rgba(255,140,40,'+(.4+.4*Math.sin(T*30))+')';ctx.fillRect(ge.x-14,ge.y-6,28,6);}
+    if(ge.ph===1){var gg=ctx.createLinearGradient(0,ge.y,0,ge.y-300);gg.addColorStop(0,'rgba(255,140,30,.9)');gg.addColorStop(1,'rgba(255,90,20,0)');ctx.fillStyle=gg;ctx.fillRect(ge.x-18,ge.y-300,36,300);}}
+  // items
+  for(i=0;i<U3.items.length;i++){var it=U3.items[i];if(it.got||it.x<cam.x-60||it.x>cam.x+vw+60)continue;
+    var bob=Math.sin(T*3+i)*3;ctx.save();ctx.translate(it.x,it.y+bob);
+    if(it.k==='idol'){var ig=ctx.createRadialGradient(0,0,2,0,0,40);ig.addColorStop(0,'rgba(255,230,120,.8)');ig.addColorStop(1,'rgba(255,230,120,0)');ctx.fillStyle=ig;ctx.fillRect(-40,-40,80,80);
+      ctx.fillStyle='#d9c38a';ctx.fillRect(-10,-16,20,30);ctx.fillRect(-14,10,28,6);ctx.fillStyle='#4a3a20';ctx.fillRect(-6,-10,4,5);ctx.fillRect(2,-10,4,5);ctx.fillRect(-4,0,8,3);}
+    else{ctx.fillStyle='#8a5a22';ctx.fillRect(-14,-9,28,18);ctx.fillStyle='#ffd54a';ctx.fillRect(-14,-9,28,5);ctx.fillRect(-3,-4,6,8);ctx.fillStyle='rgba(255,230,120,.25)';ctx.beginPath();ctx.arc(0,0,26,0,TAU);ctx.fill();}
+    ctx.restore();}
+  // turrets
+  for(i=0;i<U3.tur.length;i++){var tu=U3.tur[i];if(tu.dead||tu.x<cam.x-40||tu.x>cam.x+vw+40)continue;
+    ctx.save();ctx.translate(tu.x,tu.y);ctx.fillStyle=tu.fl>0?'#fff':'#444a58';ctx.beginPath();ctx.arc(0,0,16,0,TAU);ctx.fill();ctx.strokeStyle='#222';ctx.lineWidth=3;ctx.stroke();
+    var ta=Math.atan2(hero.y-tu.y,hero.x-tu.x);ctx.strokeStyle='#8a93a8';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(ta)*22,Math.sin(ta)*22);ctx.stroke();
+    ctx.fillStyle='#ff4a3a';ctx.beginPath();ctx.arc(0,0,5,0,TAU);ctx.fill();ctx.restore();}
+  // core
+  var co=U3.core;if(co&&!co.dead&&co.x>cam.x-200&&co.x<cam.x+vw+200){
+    var pu2=.5+.5*Math.sin(T*4),R=co.r+pu2*5;ctx.save();ctx.translate(co.x,co.y);
+    var cg=ctx.createRadialGradient(0,0,4,0,0,R*2.4);cg.addColorStop(0,'rgba(255,240,170,.95)');cg.addColorStop(.35,'rgba(255,140,40,.5)');cg.addColorStop(1,'rgba(255,60,20,0)');ctx.fillStyle=cg;ctx.fillRect(-R*2.4,-R*2.4,R*4.8,R*4.8);
+    ctx.fillStyle=co.flash>0?'#ffffff':'#ffb347';ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();ctx.fillStyle='#ffe9a0';ctx.beginPath();ctx.arc(-R*.2,-R*.2,R*.55,0,TAU);ctx.fill();
+    ctx.strokeStyle='#8a2a10';ctx.lineWidth=3;for(var kk=0;kk<6;kk++){var a2=kk*1.05+T*.3;ctx.beginPath();ctx.moveTo(Math.cos(a2)*R*.4,Math.sin(a2)*R*.4);ctx.lineTo(Math.cos(a2+.3)*R*.95,Math.sin(a2+.3)*R*.95);ctx.stroke();}
+    if(co.sh>0){ctx.strokeStyle='rgba(120,230,255,'+(.5+.4*Math.sin(T*40))+')';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,R+16,0,TAU);ctx.stroke();}
+    ctx.restore();
+    if(Math.hypot(hero.x-co.x,hero.y-co.y)<760){var bw=220,bx=co.x-bw/2,by=co.y-R-44;ctx.fillStyle='#000a';ctx.fillRect(bx-2,by-2,bw+4,16);ctx.fillStyle='#ff6a2a';ctx.fillRect(bx,by,bw*Math.max(0,co.hp/co.max),12);ctx.fillStyle='#fff';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('PLANET CORE',co.x,by-6);}
+  }
+}
+var _drawGround3=drawGround;
+drawGround=function(){_drawGround3();if(U3.on&&!U2.hubOn)drawUnder();};
+var _drawBeams3=drawBeams;
+drawBeams=function(){
+  _drawBeams3();if(!U3.on||U2.hubOn)return;
+  var vw=W/zoom,i,e;
+  for(i=0;i<U3.lm.length;i++){var b=U3.lm[i];if(b.lmDone||b.alive<=0)continue;var bx=b.x+b.cols*B/2,by=GROUND-b.rows*B-50+Math.sin(T*2)*4;if(bx<cam.x-80||bx>cam.x+vw+80)continue;
+    ctx.fillStyle='#ffd54a';ctx.beginPath();ctx.moveTo(bx,by-14);ctx.lineTo(bx+10,by);ctx.lineTo(bx,by+14);ctx.lineTo(bx-10,by);ctx.closePath();ctx.fill();ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#000b';ctx.strokeText('★ '+b.lm+' LANDMARK',bx,by-22);ctx.fillStyle='#fff';ctx.fillText('★ '+b.lm+' LANDMARK',bx,by-22);}
+  for(i=0;i<U3.resc.length;i++){e=U3.resc[i];if(e.dead||e.x<cam.x-80||e.x>cam.x+vw+80)continue;var rp=.5+.5*Math.sin(T*5);ctx.strokeStyle='rgba(90,255,150,'+(.5+.4*rp)+')';ctx.lineWidth=3;ctx.beginPath();ctx.arc(e.x+e.w/2,e.y+e.h/2,Math.max(e.w,e.h)*.8+rp*4,0,TAU);ctx.stroke();ctx.fillStyle='#7dffae';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('PROTECT',e.x+e.w/2,e.y-12);}
+};
+var _drawPlanet3=drawPlanet;
+drawPlanet=function(){
+  _drawPlanet3();if(!U3.on||U2.hubOn)return;
+  var i;
+  // speed streaks
+  if(U3.sp>1.3){var sp=Math.hypot(hero.vx,hero.vy)||1,vx=-hero.vx/sp,vy=-hero.vy/sp,a=Math.min(.55,(U3.sp-1.2)*.22);ctx.strokeStyle='rgba(200,235,255,'+a+')';ctx.lineWidth=2;
+    for(i=0;i<10;i++){var sx=Math.random()*W,sy=Math.random()*H,L=40+U3.sp*30;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+vx*L,sy+vy*L);ctx.stroke();}}
+  ctx.textAlign='left';ctx.font='bold 13px system-ui';
+  // speed meter
+  if(U3.sp>1.05){ctx.fillStyle='#0009';ctx.fillRect(14,H-120,92,18);ctx.fillStyle='#7ad0ff';ctx.fillRect(16,H-118,88*Math.min(1,(U3.sp-1)/2.6),14);ctx.fillStyle='#fff';ctx.fillText('SPEED x'+U3.sp.toFixed(1),20,H-106);}
+  // depth + zone
+  var dep=Math.max(0,Math.floor((hero.y-GROUND)/UC)*3);
+  ctx.textAlign='center';ctx.font='bold 12px system-ui';ctx.lineWidth=3;ctx.strokeStyle='#000b';
+  var line=hero.y>GROUND+10?('⬇ DEPTH '+dep+' m · '+LAYN[layerOf(Math.floor((hero.y-GROUND)/UC))]):('📍 '+ZNAME[zoneAt(hero.x)]);
+  ctx.strokeText(line,W/2,96);ctx.fillStyle='#fff';ctx.fillText(line,W/2,96);
+  // alert stars
+  var stars='';for(i=0;i<4;i++)stars+=i<U3.heatLv?'★':'☆';
+  ctx.font='bold 15px system-ui';ctx.strokeText(stars,W/2,114);ctx.fillStyle=U3.heatLv>=3?'#ff5a4a':(U3.heatLv>0?'#ffd54a':'#aab4c8');ctx.fillText(stars,W/2,114);
+  // arrows
+  var vw=W/zoom,vh=H/zoom;
+  var tg=null,txt='';
+  if(U3.hint&&!U3.coreDead&&U3.core){tg=U3.core;txt='CORE';}else if(U3.tgt){tg=U3.tgt;txt='';}
+  if(tg){var sx2=(tg.x-cam.x)*zoom,sy2=(tg.y-cam.y)*zoom;
+    if(sx2<0||sx2>W||sy2<0||sy2>H){var ang=Math.atan2(sy2-H/2,sx2-W/2),ex=clamp(W/2+Math.cos(ang)*W,40,W-40),ey=clamp(H/2+Math.sin(ang)*H,60,H-60);
+      ctx.save();ctx.translate(ex,ey);ctx.rotate(ang);ctx.fillStyle=txt?'#ff9a3a':'rgba(255,255,255,.75)';ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(-10,-10);ctx.lineTo(-10,10);ctx.closePath();ctx.fill();ctx.restore();
+      if(txt){ctx.fillStyle='#ff9a3a';ctx.fillText(txt,ex,ey-16);}}}
+  // cinematic
+  var cn=U3.cine;if(cn){var p=cn.t/cn.dur;
+    if(cn.t<.3){ctx.fillStyle='rgba(255,255,255,'+(1-cn.t/.3)+')';ctx.fillRect(0,0,W,H);}
+    var sd=cn.seed,pts=[[W/2,H/2]],px2=W/2,py2=H/2,steps=Math.floor(24*Math.min(1,p*1.6));
+    for(var s=0;s<2;s++){px2=W/2;py2=H/2;var dir=s?-1:1;ctx.beginPath();ctx.moveTo(px2,py2);
+      for(i=1;i<=steps;i++){px2+=dir*(W/24)*(1+Math.sin(sd+i*1.7)*.2);py2+=Math.sin(sd*2+i*2.3+s)*38;ctx.lineTo(px2,py2);}
+      ctx.strokeStyle='rgba(255,170,60,.9)';ctx.lineWidth=cn.big?12:7;ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=cn.big?4:2;ctx.stroke();}
+    if(cn.big){ctx.fillStyle='rgba(0,0,0,'+Math.min(.5,p*.6)+')';ctx.fillRect(0,0,W,H*.14);ctx.fillRect(0,H*.86,W,H*.14);ctx.fillStyle='#fff';ctx.font='bold 22px system-ui';ctx.textAlign='center';ctx.fillText('THE MOON CRACKS IN HALF',W/2,H*.5-30);}
+    shake(cn.big?8:5);}
+};
+
+var _showTitle3=showTitle;
+showTitle=function(){_showTitle3();var u=u3save(),n=0;for(var k in u.cores)n++;var el=$('tStats');if(el)el.textContent=(u.best||n||u.fos)?('⬇ Deepest dig '+(u.best*3)+' m  ·  🌍 Cores destroyed '+n+'  ·  🗿 Fossils '+u.fos):'Dig deep. Destroy the core.';};
+/* ---------- debug additions ---------- */
+var _renderDbg3=renderDbg;
+renderDbg=function(){
+  _renderDbg3();if(!dbgOk)return;var body=$('dbgBody');
+  dbgSec(body,'Deep Dive');
+  dbgBtn(body,'Fly to core chamber',function(){if(U3.on&&U3.core){hero.x=U3.core.x;hero.y=U3.core.y-300;closeDbg();dbgMsg('');}else dbgMsg('Enter a planet first');});
+  dbgBtn(body,'Clear surface (go dig the core)',function(){if(U3.on){destroyed=Math.min(total*.995,Math.max(destroyed,total*.99));closeDbg();}else dbgMsg('Enter a planet first');});
+  dbgBtn(body,'Kill the core now',function(){if(U3.on&&U3.core&&!U3.core.dead){closeDbg();coreBlow();}else dbgMsg('No core here');});
+  dbgBtn(body,'Alert level to max',function(){if(U3.on){U3.heat=100;closeDbg();}});
+  dbgBtn(body,'Max dash speed',function(){U3.sp=3.6;U3.stk=6;U3.dashT=T+999;closeDbg();});
+  dbgBtn(body,'Fossil +1',function(){u3save().fos++;persist();dbgMsg('Fossils: '+u3save().fos);});
+};
+
 /* ================= MAIN LOOP ================= */
 function render(){
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
@@ -3070,6 +3521,7 @@ function frame(now){
   try{step(dt);render();}catch(err){if(window.__skErr)window.__skErr(err);else console.error(err);}
   requestAnimationFrame(frame);
 }
+window.__sk3={U3:U3,digAt:digAt,coreBlow:coreBlow,coreHurt:coreHurt,squad:squad,tryDash:tryDash,solidAt:solidAt,genUnder:genUnder,boxBlocked:boxBlocked,setDbg:function(){dbgOk=true;}};
 window.__sk={step:step,render:render,enter:function(i){genPlanet(i);mode='planet';document.body.classList.remove('space');},
   get:function(){return {ents:ents,destroyed:destroyed,total:total,hero:hero,save:save,mode:mode,doneFlag:doneFlag,overlay:overlay,boss:boss,dlg:dlg,hoops:hoops,trophs:trophs,combo:combo,rage:rage,ultT:ultT,PI:PI_,shots:shots,musMode:musMode};},
   setSel:function(i){sel=i;},setAim:function(a){aim=a;},keys:keys,mouse:mouse,openMenu:openMenu,setDone:function(){destroyed=total;},
